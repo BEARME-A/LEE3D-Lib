@@ -1,0 +1,32 @@
+{
+  "schema": "lee3d.profile/v1",
+  "units": "mm",
+  "name": "example-charger",
+  "length": 196,
+  "stations": 80,
+  "arcSegments": 64,
+  "roofFlatness": 1.6,
+  "wallThickness": 1.8,
+  "archLift": 1.0,
+  "topProfile": [
+    [0.0, 24], [0.12, 30], [0.30, 40], [0.46, 52],
+    [0.58, 56], [0.66, 55], [0.80, 42], [1.0, 34]
+  ],
+  "bottomProfile": [
+    [0.0, 11], [0.2, 8], [0.5, 7], [0.8, 8], [1.0, 11]
+  ],
+  "widthProfile": [
+    [0.0, 16], [0.14, 34], [0.46, 42], [0.84, 36], [1.0, 22]
+  ],
+  "wheels": [
+    { "x": -60, "z": 14, "r": 17, "width": 28 },
+    { "x":  60, "z": 14, "r": 17, "width": 28 }
+  ],
+  "wheelLayout": {
+    "wheelbaseFrac": 0.61,
+    "track": 70,
+    "radius": 17,
+    "width": 28,
+    "rideHeight": 14
+  }
+}

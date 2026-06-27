@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/BEARME-A/LEE3D-Lib/schema/manifest.schema.json",
+  "title": "LEE3D Project Manifest",
+  "description": "Per-project index living at projects/<name>/manifest.json. Records the chassis it targets and links every input drawing, profile version, and generated body so a build is fully reproducible.",
+  "type": "object",
+  "required": ["project", "created", "chassis", "artifacts"],
+  "properties": {
+    "project": { "type": "string", "description": "Project slug, e.g. 'example-charger'." },
+    "title":   { "type": "string" },
+    "created": { "type": "string", "format": "date-time" },
+    "updated": { "type": "string", "format": "date-time" },
+    "builder": { "type": "string", "description": "Who/what produced it, e.g. 'LEE3D-Frontend 0.1.0'." },
+
+    "chassis": {
+      "type": "object",
+      "description": "The real frame + wheels this body must drop onto.",
+      "properties": {
+        "name":      { "type": "string" },
+        "scale":     { "type": "string", "description": "e.g. '1:24', '1:10 RC'." },
+        "wheelbase_mm": { "type": "number" },
+        "track_mm":     { "type": "number" },
+        "wheel_radius_mm": { "type": "number" },
+        "wheel_width_mm":  { "type": "number" }
+      }
+    },
+
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "path"],
+        "properties": {
+          "kind": { "type": "string", "enum": ["drawing", "photo", "json", "generated", "export", "version"] },
+          "path": { "type": "string", "description": "Repo-relative path." },
+          "from": { "type": "string", "description": "Optional path of the source artifact this was derived from." },
+          "sha":  { "type": "string", "description": "Git blob sha (set by the backend on commit)." },
+          "note": { "type": "string" },
+          "added":{ "type": "string", "format": "date-time" }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

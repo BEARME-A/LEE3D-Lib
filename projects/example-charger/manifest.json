@@ -1,0 +1,37 @@
+{
+  "project": "example-charger",
+  "title": "Example muscle-car body (1:24)",
+  "created": "2026-01-15T10:00:00Z",
+  "updated": "2026-01-15T10:42:00Z",
+  "builder": "LEE3D-Frontend 0.1.0",
+  "chassis": {
+    "name": "generic 1:24 diecast frame",
+    "scale": "1:24",
+    "wheelbase_mm": 120,
+    "track_mm": 70,
+    "wheel_radius_mm": 17,
+    "wheel_width_mm": 28
+  },
+  "artifacts": [
+    {
+      "kind": "drawing",
+      "path": "drawings/example-charger/side-view.png",
+      "note": "Hand drawing of the left side profile, photographed.",
+      "added": "2026-01-15T10:00:00Z"
+    },
+    {
+      "kind": "json",
+      "path": "projects/example-charger/example-charger.profile.json",
+      "from": "drawings/example-charger/side-view.png",
+      "note": "Traced + parametrized in the studio; scale set from a 100 mm reference line.",
+      "added": "2026-01-15T10:20:00Z"
+    },
+    {
+      "kind": "generated",
+      "path": "generated/example-charger/example-charger.stl",
+      "from": "projects/example-charger/example-charger.profile.json",
+      "note": "Open-bottom shell, 1.8 mm wall, wheel openings cut. Watertight.",
+      "added": "2026-01-15T10:42:00Z"
+    }
+  ]
+}

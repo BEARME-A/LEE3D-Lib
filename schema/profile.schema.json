@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/BEARME-A/LEE3D-Lib/schema/profile.schema.json",
+  "title": "LEE3D Body Profile",
+  "description": "The single interchange format between LEE3D-Frontend, LEE3D-Backend-A and LEE3D-Lib. A 2D-derived parametric description of a car body for lofting into a 3D printable shell.",
+  "type": "object",
+  "required": ["length", "topProfile", "bottomProfile", "widthProfile"],
+  "additionalProperties": true,
+  "properties": {
+    "schema":       { "const": "lee3d.profile/v1" },
+    "units":        { "type": "string", "enum": ["mm", "in"], "default": "mm" },
+    "name":         { "type": "string", "default": "untitled-body" },
+    "length":       { "type": "number", "exclusiveMinimum": 0, "description": "Overall body length along X (mm)." },
+    "stations":     { "type": "integer", "minimum": 8, "maximum": 400, "default": 72, "description": "Loft resolution along the length." },
+    "arcSegments":  { "type": "integer", "minimum": 8, "maximum": 400, "default": 56, "description": "Points around each cross-section arc." },
+    "roofFlatness": { "type": "number", "minimum": 0.4, "default": 1.4, "description": "Cross-section/roof exponent; higher = boxier." },
+    "wallThickness":{ "type": "number", "exclusiveMinimum": 0, "default": 1.8, "description": "Shell wall thickness (mm)." },
+    "archLift":     { "type": "number", "minimum": 0, "default": 1.0, "description": "Wheel-arch clearance multiplier." },
+
+    "topProfile":    { "$ref": "#/$defs/profileCurve", "description": "Upper silhouette (roofline): [x_fraction, z_mm] pairs." },
+    "bottomProfile": { "$ref": "#/$defs/profileCurve", "description": "Lower silhouette (sill/floor): [x_fraction, z_mm] pairs." },
+    "widthProfile":  { "$ref": "#/$defs/profileCurve", "description": "Half-width vs length: [x_fraction, halfWidth_mm] pairs." },
+
+    "wheels": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["x", "z", "r"],
+        "properties": {
+          "x":     { "type": "number", "description": "Axle X position (mm) from body centre." },
+          "z":     { "type": "number", "description": "Axle centre height (mm)." },
+          "r":     { "type": "number", "exclusiveMinimum": 0, "description": "Wheel radius (mm)." },
+          "width": { "type": "number", "exclusiveMinimum": 0, "default": 26, "description": "Wheel width (mm) for the boolean cutter." }
+        },
+        "additionalProperties": false
+      }
+    },
+
+    "wheelLayout": {
+      "type": "object",
+      "description": "Convenience summary of the chassis the body must fit.",
+      "properties": {
+        "wheelbaseFrac": { "type": "number" },
+        "track":         { "type": "number" },
+        "radius":        { "type": "number" },
+        "width":         { "type": "number" },
+        "rideHeight":    { "type": "number" }
+      }
+    }
+  },
+
+  "$defs": {
+    "profileCurve": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "items": { "type": "number" },
+        "description": "[x_fraction in 0..1, value in mm]"
+      }
+    }
+  }
+}
