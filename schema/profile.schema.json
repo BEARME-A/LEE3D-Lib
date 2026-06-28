@@ -20,6 +20,9 @@
     "topProfile":    { "$ref": "#/$defs/profileCurve", "description": "Upper silhouette (roofline): [x_fraction, z_mm] pairs." },
     "bottomProfile": { "$ref": "#/$defs/profileCurve", "description": "Lower silhouette (sill/floor): [x_fraction, z_mm] pairs." },
     "widthProfile":  { "$ref": "#/$defs/profileCurve", "description": "Half-width vs length: [x_fraction, halfWidth_mm] pairs." },
+    "section":       { "type": ["array", "null"], "items": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 }, "description": "Optional normalized cross-section from a front view: [x_fraction 0..1 across width, z_fraction 0..1 height] pairs. Null = parametric arc from roofFlatness." },
+    "mode":          { "type": ["string", "null"], "enum": ["loft", "projection", null], "description": "Studio reconstruction method. 'projection' intersects the three view silhouettes (visual hull); 'loft' stretches the front section." },
+    "frontHull":     { "type": ["array", "null"], "items": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 }, "description": "Absolute-mm front silhouette [y_mm, z_mm] used by projection mode." },
 
     "wheels": {
       "type": "array",
