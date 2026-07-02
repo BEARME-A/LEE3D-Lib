@@ -1,68 +1,84 @@
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/BEARME-A/LEE3D-Lib/schema/profile.schema.json",
-  "title": "LEE3D Body Profile",
-  "description": "The single interchange format between LEE3D-Frontend, LEE3D-Backend-A and LEE3D-Lib. A 2D-derived parametric description of a car body for lofting into a 3D printable shell.",
-  "type": "object",
-  "required": ["length", "topProfile", "bottomProfile", "widthProfile"],
-  "additionalProperties": true,
-  "properties": {
-    "schema":       { "const": "lee3d.profile/v1" },
-    "units":        { "type": "string", "enum": ["mm", "in"], "default": "mm" },
-    "name":         { "type": "string", "default": "untitled-body" },
-    "length":       { "type": "number", "exclusiveMinimum": 0, "description": "Overall body length along X (mm)." },
-    "stations":     { "type": "integer", "minimum": 8, "maximum": 400, "default": 72, "description": "Loft resolution along the length." },
-    "arcSegments":  { "type": "integer", "minimum": 8, "maximum": 400, "default": 56, "description": "Points around each cross-section arc." },
-    "roofFlatness": { "type": "number", "minimum": 0.4, "default": 1.4, "description": "Cross-section/roof exponent; higher = boxier." },
-    "wallThickness":{ "type": "number", "exclusiveMinimum": 0, "default": 1.8, "description": "Shell wall thickness (mm)." },
-    "archLift":     { "type": "number", "minimum": 0, "default": 1.0, "description": "Wheel-arch clearance multiplier." },
+"""
+LEE3D shared data contract.
 
-    "topProfile":    { "$ref": "#/$defs/profileCurve", "description": "Upper silhouette (roofline): [x_fraction, z_mm] pairs." },
-    "bottomProfile": { "$ref": "#/$defs/profileCurve", "description": "Lower silhouette (sill/floor): [x_fraction, z_mm] pairs." },
-    "widthProfile":  { "$ref": "#/$defs/profileCurve", "description": "Half-width vs length: [x_fraction, halfWidth_mm] pairs." },
-    "section":       { "type": ["array", "null"], "items": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 }, "description": "Optional normalized cross-section from a front view: [x_fraction 0..1 across width, z_fraction 0..1 height] pairs. Null = parametric arc from roofFlatness." },
-    "mode":          { "type": ["string", "null"], "enum": ["loft", "projection", null], "description": "Studio reconstruction method. 'projection' intersects the three view silhouettes (visual hull); 'loft' stretches the front section." },
-    "frontHull":     { "type": ["array", "null"], "items": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 }, "description": "Absolute-mm front silhouette [y_mm, z_mm] used by projection mode." },
+The `Profile` model below is the SINGLE source of truth that flows between the
+three repos:
 
-    "wheels": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["x", "z", "r"],
-        "properties": {
-          "x":     { "type": "number", "description": "Axle X position (mm) from body centre." },
-          "z":     { "type": "number", "description": "Axle centre height (mm)." },
-          "r":     { "type": "number", "exclusiveMinimum": 0, "description": "Wheel radius (mm)." },
-          "width": { "type": "number", "exclusiveMinimum": 0, "default": 26, "description": "Wheel width (mm) for the boolean cutter." }
-        },
-        "additionalProperties": false
-      }
-    },
+    LEE3D-Frontend  --(exports profile.json)-->  LEE3D-Backend-A
+    LEE3D-Backend-A --(generates STL/STEP)----->  LEE3D-Lib
 
-    "wheelLayout": {
-      "type": "object",
-      "description": "Convenience summary of the chassis the body must fit.",
-      "properties": {
-        "wheelbaseFrac": { "type": "number" },
-        "track":         { "type": "number" },
-        "radius":        { "type": "number" },
-        "width":         { "type": "number" },
-        "rideHeight":    { "type": "number" }
-      }
-    }
-  },
+Field names match the JSON the browser app writes, byte-for-byte, so a profile
+exported in the UI drops straight into `POST /generate`.
+"""
+from __future__ import annotations
+from typing import List, Optional
+from pydantic import BaseModel, Field
 
-  "$defs": {
-    "profileCurve": {
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "type": "array",
-        "minItems": 2,
-        "maxItems": 2,
-        "items": { "type": "number" },
-        "description": "[x_fraction in 0..1, value in mm]"
-      }
-    }
-  }
-}
+
+Point = List[float]  # [x_fraction (0..1), value_in_mm]
+
+
+class Wheel(BaseModel):
+    x: float = Field(..., description="Axle X position in mm, measured from body centre")
+    z: float = Field(..., description="Axle centre height in mm")
+    r: float = Field(..., gt=0, description="Wheel radius in mm")
+    width: float = Field(26.0, gt=0, description="Wheel width in mm (for the boolean cutter)")
+
+
+class WheelLayout(BaseModel):
+    wheelbaseFrac: float = 0.62
+    track: float = 62.0
+    radius: float = 16.0
+    width: float = 26.0
+    rideHeight: float = 13.0
+
+
+class Profile(BaseModel):
+    schema_: str = Field("lee3d.profile/v1", alias="schema")
+    units: str = "mm"
+    name: str = "untitled-body"
+
+    length: float = Field(180.0, gt=0)
+    stations: int = Field(72, ge=8, le=400)
+    arcSegments: int = Field(56, ge=8, le=400)
+    roofFlatness: float = 1.4
+    wallThickness: float = Field(1.8, gt=0)
+    archLift: float = 1.0
+
+    topProfile: List[Point]
+    bottomProfile: List[Point]
+    widthProfile: List[Point]
+    # Optional normalized cross-section from a front view: [x_fraction, z_fraction] pairs.
+    # Accepted for round-trip + storage; the CadQuery generator currently lofts its own
+    # section, so this is forward-compatible metadata (used by the browser studio today).
+    section: Optional[List[Point]] = None
+    mode: Optional[str] = None              # 'loft' | 'projection' (studio reconstruction method)
+    frontHull: Optional[List[Point]] = None # absolute-mm front silhouette for projection mode
+    sections: Optional[list] = None         # [{at, prof:[[t,zNorm]], src}] cross-section cuts morphed along length
+    wheels: List[Wheel] = []
+    wheelLayout: Optional[WheelLayout] = None
+
+    class Config:
+        populate_by_name = True
+
+
+class GenerateOptions(BaseModel):
+    """Controls for the CadQuery generator (the 'production' body)."""
+    fmt: str = Field("stl", pattern="^(stl|step)$")
+    open_bottom: bool = True            # shell out the underside for a body shell
+    cut_wheels: bool = True             # boolean-cut true wheel openings
+    section: str = Field("super", pattern="^(ellipse|super)$")  # cross-section style
+    commit_to_library: bool = False     # also push the result into LEE3D-Lib
+    project_id: Optional[int] = None
+
+
+class ProjectIn(BaseModel):
+    name: str
+    notes: str = ""
+
+
+class CommitFile(BaseModel):
+    """A single file to write into the LEE3D-Lib repo via the GitHub API."""
+    path: str = Field(..., description="Repo-relative path, e.g. 'drawings/charger/side.png'")
+    content_base64: str
+    message: str = "LEE3D: add file"
