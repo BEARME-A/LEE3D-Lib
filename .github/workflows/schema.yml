@@ -1,0 +1,59 @@
+name: schema
+
+# Checks that the three repos still agree about what a profile is.
+#
+# This exists because four bugs in one month were the same shape: one end knowing about a key
+# the other did not, with nothing raising an error. Pockets vanished from every STEP export.
+# Extra views were ignored silently. Per-face wall thickness was honoured by one builder and
+# not the other, then not by the backend either.
+#
+# It checks out all three repos because that is the only place the question can be answered —
+# no single repo can tell whether the other end reads a key.
+
+on:
+  push:
+  pull_request:
+  # the other two repos can drift without anything happening here, so also check on a timer
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  agree:
+    runs-on: ubuntu-latest
+    steps:
+      - name: This repo (the schema)
+        uses: actions/checkout@v4
+        with:
+          path: lib
+
+      - name: The studio
+        uses: actions/checkout@v4
+        with:
+          repository: BEARME-A/LEE3D-Frontend
+          path: frontend
+        continue-on-error: true
+
+      - name: The exact backend
+        uses: actions/checkout@v4
+        with:
+          repository: BEARME-A/LEE3D-Backend-A
+          path: backend
+        continue-on-error: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install jsonschema
+
+      # Fails the build on any disagreement. If a checkout above was skipped — a private repo,
+      # a rename — the checker still validates every saved profile against the schema, so this
+      # step is never a no-op that quietly passes.
+      - name: Do the three repos agree about a profile?
+        run: |
+          python3 lib/tools/check_schema_coverage.py \
+            --schema   lib/schema/profile.schema.json \
+            --profiles lib/schema \
+            --frontend frontend \
+            --backend  backend
