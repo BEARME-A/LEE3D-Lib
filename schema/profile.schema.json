@@ -1,198 +1,657 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/BEARME-A/LEE3D-Lib/schema/profile.schema.json",
-  "title": "LEE3D Body Profile",
-  "description": "The single interchange format between LEE3D-Frontend, LEE3D-Backend-A and LEE3D-Lib. A 2D-derived parametric description of a car body for lofting into a 3D printable shell.",
+  "title": "LEE3D profile",
+  "description": "The single artefact that flows between the three repos: the studio writes it, the exact backend builds from it, and this library stores it.\n\nWHY EVERY KEY CARRIES `x-read-by`. Four bugs in one month were all the same shape \u2014 one end knowing about a key the other did not. Pockets were dropped from every STEP export; extra views were ignored without a word; per-face wall thickness was honoured by one builder and not the other, then not by the backend either. None raised an error. This field makes that class of bug visible in the contract itself: if a key says [studio, exact] and only one of them reads it, that is the bug, written down.\n\n`additionalProperties` is deliberately true. A saved model must never fail to load because it carries something this file has not been taught yet \u2014 but anything the engine actually depends on belongs here.",
   "type": "object",
   "required": [
     "length",
     "topProfile",
-    "bottomProfile",
     "widthProfile"
   ],
   "additionalProperties": true,
   "properties": {
     "schema": {
-      "const": "lee3d.profile/v1"
-    },
-    "units": {
-      "type": "string",
-      "enum": [
-        "mm",
-        "in"
+      "description": "Schema version this profile was written against.",
+      "x-read-by": [
+        "studio"
       ],
-      "default": "mm"
+      "type": "string"
     },
     "name": {
+      "description": "What the person called it.",
+      "x-read-by": [
+        "studio",
+        "exact"
+      ],
+      "type": "string"
+    },
+    "category": {
+      "description": "Folder it is filed under in the library.",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "string"
+    },
+    "units": {
+      "description": "Always mm. Present for readers that cannot assume.",
+      "x-read-by": [
+        "studio"
+      ],
       "type": "string",
-      "default": "untitled-body"
+      "enum": [
+        "mm"
+      ]
     },
     "length": {
+      "description": "Nose to tail in mm. The dimension everything else scales from.",
+      "x-read-by": [
+        "studio",
+        "exact"
+      ],
       "type": "number",
-      "exclusiveMinimum": 0,
-      "description": "Overall body length along X (mm)."
-    },
-    "stations": {
-      "type": "integer",
-      "minimum": 8,
-      "maximum": 400,
-      "default": 72,
-      "description": "Loft resolution along the length."
-    },
-    "arcSegments": {
-      "type": "integer",
-      "minimum": 8,
-      "maximum": 400,
-      "default": 56,
-      "description": "Points around each cross-section arc."
-    },
-    "roofFlatness": {
-      "type": "number",
-      "minimum": 0.4,
-      "default": 1.4,
-      "description": "Cross-section/roof exponent; higher = boxier."
-    },
-    "wallThickness": {
-      "type": "number",
-      "exclusiveMinimum": 0,
-      "default": 1.8,
-      "description": "Shell wall thickness (mm)."
-    },
-    "archLift": {
-      "type": "number",
-      "minimum": 0,
-      "default": 1.0,
-      "description": "Wheel-arch clearance multiplier."
+      "exclusiveMinimum": 0
     },
     "topProfile": {
-      "$ref": "#/$defs/profileCurve",
-      "description": "Upper silhouette (roofline): [x_fraction, z_mm] pairs."
-    },
-    "bottomProfile": {
-      "$ref": "#/$defs/profileCurve",
-      "description": "Lower silhouette (sill/floor): [x_fraction, z_mm] pairs."
-    },
-    "widthProfile": {
-      "$ref": "#/$defs/profileCurve",
-      "description": "Half-width vs length: [x_fraction, halfWidth_mm] pairs."
-    },
-    "section": {
-      "type": [
-        "array",
-        "null"
-      ],
-      "items": {
-        "type": "array",
-        "items": {
-          "type": "number"
-        },
-        "minItems": 2,
-        "maxItems": 2
-      },
-      "description": "Optional normalized cross-section from a front view: [x_fraction 0..1 across width, z_fraction 0..1 height] pairs. Null = parametric arc from roofFlatness."
-    },
-    "mode": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "enum": [
-        "loft",
-        "projection",
-        null
-      ],
-      "description": "Studio reconstruction method. 'projection' intersects the three view silhouettes (visual hull); 'loft' stretches the front section."
-    },
-    "frontHull": {
-      "type": [
-        "array",
-        "null"
-      ],
-      "items": {
-        "type": "array",
-        "items": {
-          "type": "number"
-        },
-        "minItems": 2,
-        "maxItems": 2
-      },
-      "description": "Absolute-mm front silhouette [y_mm, z_mm] used by projection mode."
-    },
-    "wheels": {
       "type": "array",
-      "items": {
-        "type": "object",
-        "required": [
-          "x",
-          "z",
-          "r"
-        ],
-        "properties": {
-          "x": {
-            "type": "number",
-            "description": "Axle X position (mm) from body centre."
-          },
-          "z": {
-            "type": "number",
-            "description": "Axle centre height (mm)."
-          },
-          "r": {
-            "type": "number",
-            "exclusiveMinimum": 0,
-            "description": "Wheel radius (mm)."
-          },
-          "width": {
-            "type": "number",
-            "exclusiveMinimum": 0,
-            "default": 26,
-            "description": "Wheel width (mm) for the boolean cutter."
-          }
-        },
-        "additionalProperties": false
-      }
-    },
-    "wheelLayout": {
-      "type": "object",
-      "description": "Convenience summary of the chassis the body must fit.",
-      "properties": {
-        "wheelbaseFrac": {
-          "type": "number"
-        },
-        "track": {
-          "type": "number"
-        },
-        "radius": {
-          "type": "number"
-        },
-        "width": {
-          "type": "number"
-        },
-        "rideHeight": {
-          "type": "number"
-        }
-      }
-    },
-    "sections": {
-      "type": [
-        "array",
-        "null"
-      ],
-      "description": "Cross-section cuts {at:0..1, prof:[[t,zNorm]], src}, morphed along the body length."
-    }
-  },
-  "$defs": {
-    "profileCurve": {
-      "type": "array",
-      "minItems": 1,
       "items": {
         "type": "array",
         "minItems": 2,
         "maxItems": 2,
         "items": {
           "type": "number"
+        }
+      },
+      "description": "Height along the length, as [fraction, mm] pairs.",
+      "x-read-by": [
+        "studio",
+        "exact"
+      ]
+    },
+    "widthProfile": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "items": {
+          "type": "number"
+        }
+      },
+      "description": "HALF width along the length, as [fraction, mm]. Half, not full \u2014 the body is mirrored about its centreline.",
+      "x-read-by": [
+        "studio",
+        "exact"
+      ]
+    },
+    "bottomProfile": {
+      "description": "Underside height along the length. null = a flat floor.",
+      "x-read-by": [
+        "studio"
+      ],
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "number"
+            }
+          }
         },
-        "description": "[x_fraction in 0..1, value in mm]"
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "widthBottomProfile": {
+      "description": "Half width at the floor, where it differs from the widest point. null = same as widthProfile.",
+      "x-read-by": [
+        "studio"
+      ],
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "mode": {
+      "description": "Which builder runs. 'projection' is Follow my drawing (carves the intersection of the traced outlines); 'loft' is Smooth (lofts sections).",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "string",
+      "enum": [
+        "projection",
+        "loft",
+        "revolve"
+      ]
+    },
+    "stations": {
+      "description": "Sections along the length. Also sets the default grid resolution for the carve.",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "integer",
+      "minimum": 4
+    },
+    "arcSegments": {
+      "description": "Points around each section.",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "integer",
+      "minimum": 3
+    },
+    "hullCrisp": {
+      "description": "0 = the smooth rounded body, 1 = exactly the traced outline. Follow my drawing only.",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "hullRes": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "Explicit carve grid resolution. Normally derived from stations; capped in the app.",
+      "x-read-by": [
+        "studio"
+      ]
+    },
+    "hullQuality": {
+      "description": "Build quality. Scales BOTH the resolution request and its cap \u2014 scaling only the cap does nothing on most models.",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "string",
+      "enum": [
+        "fast",
+        "normal",
+        "fine"
+      ]
+    },
+    "hullFast": {
+      "description": "Set only during a drag, for a provisional build. Never saved deliberately.",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "boolean"
+    },
+    "roofFlatness": {
+      "description": "How square the roof sits over the sections. Smooth only.",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "number"
+    },
+    "sidePoly": {
+      "description": "Side silhouette (left flank), in 0..1 of length by 0..1 of height. Material exists only where every view agrees. null = not traced.",
+      "x-read-by": [
+        "studio",
+        "exact"
+      ],
+      "oneOf": [
+        {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "sidePolyR": {
+      "description": "Right flank, when it differs from the left. Absent means symmetric. Material exists only where every view agrees. null = not traced.",
+      "x-read-by": [
+        "studio",
+        "exact"
+      ],
+      "oneOf": [
+        {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "topPoly": {
+      "description": "Plan silhouette, 0..1 of length by 0..1 of width. Material exists only where every view agrees. null = not traced.",
+      "x-read-by": [
+        "studio",
+        "exact"
+      ],
+      "oneOf": [
+        {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "frontPoly": {
+      "description": "Front silhouette, 0..1 of width by 0..1 of height. Material exists only where every view agrees. null = not traced.",
+      "x-read-by": [
+        "studio",
+        "exact"
+      ],
+      "oneOf": [
+        {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "bottomPoly": {
+      "description": "Underside silhouette. Material exists only where every view agrees. null = not traced.",
+      "x-read-by": [
+        "studio"
+      ],
+      "oneOf": [
+        {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "extraViews": {
+      "type": "array",
+      "description": "Silhouettes from ARBITRARY directions \u2014 the groundwork for building from photographs. Each removes material like the three axis views do. The exact build cannot use these and reports how many it had to ignore, because a model using them comes out FATTER there.",
+      "x-read-by": [
+        "studio",
+        "exact"
+      ],
+      "items": {
+        "type": "object",
+        "required": [
+          "poly"
+        ],
+        "properties": {
+          "dir": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "number"
+            },
+            "description": "Which way the camera looks."
+          },
+          "up": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "number"
+            }
+          },
+          "from": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "number"
+            },
+            "description": "Camera position. Present = perspective, and `poly` is then in normalised image coordinates rather than millimetres."
+          },
+          "poly": {
+            "type": "array",
+            "minItems": 3,
+            "items": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "number"
+              }
+            }
+          }
+        }
       }
+    },
+    "hullHollow": {
+      "description": "Build it as a shell rather than a solid lump.",
+      "x-read-by": [
+        "studio",
+        "exact"
+      ],
+      "type": "boolean"
+    },
+    "wallThickness": {
+      "description": "Wall in mm, when every face is the same.",
+      "x-read-by": [
+        "studio",
+        "exact"
+      ],
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "wallPerFace": {
+      "description": "Use the three values below instead of one wall.",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "boolean"
+    },
+    "wallTop": {
+      "description": "Roof thickness in mm. This is the load-bearing control \u2014 a thick floor to bolt through with thin walls elsewhere.",
+      "x-read-by": [
+        "studio",
+        "exact"
+      ],
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "wallSide": {
+      "description": "Flank thickness in mm.",
+      "x-read-by": [
+        "studio",
+        "exact"
+      ],
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "wallBottom": {
+      "description": "Floor thickness in mm.",
+      "x-read-by": [
+        "studio",
+        "exact"
+      ],
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "closedBottom": {
+      "description": "Seal the underside. False leaves it open, which a toy frame usually wants.",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "boolean"
+    },
+    "openArches": {
+      "description": "Open the wheel arches. Older name for openUnderside; both are written so older files still load.",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "boolean"
+    },
+    "openUnderside": {
+      "description": "Open the underside under the arches.",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "boolean"
+    },
+    "sepBottom": {
+      "description": "Export the floor as a separate piece.",
+      "x-read-by": [
+        "studio",
+        "exact"
+      ],
+      "type": "boolean"
+    },
+    "fieldHollow": {
+      "description": "Hollow by carving the distance field rather than pushing the mesh inward. Default true, and the reason a thin section does not weld into a plank.",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "boolean"
+    },
+    "adaptiveWall": {
+      "description": "RETIRED. Honoured so older files load unchanged, off otherwise: measured across ten geometries it never once produced a clean win.",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "boolean"
+    },
+    "features": {
+      "type": "array",
+      "description": "Carved details. Depth is negative for a pocket, positive for a raise. `through` cuts all the way. A feature with NO depth is a mask or label and has no solid meaning.",
+      "x-read-by": [
+        "studio",
+        "exact"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "view": {
+            "type": "string",
+            "enum": [
+              "side",
+              "sideR",
+              "top",
+              "bottom",
+              "front",
+              "rear"
+            ],
+            "description": "Which face it was drawn on. Decides which way it goes in, and for a finite-depth pocket, where the floor lands."
+          },
+          "depth": {
+            "type": "number",
+            "description": "mm. Negative cuts, positive raises."
+          },
+          "through": {
+            "type": "boolean"
+          },
+          "soft": {
+            "type": "number"
+          },
+          "poly": {
+            "type": "array",
+            "minItems": 3,
+            "items": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      }
+    },
+    "carveMode": {
+      "description": "Which engine cuts the details. 'field' carves them into the distance field so the wall under a pocket survives; 'stamp' presses them onto the meshed surface, which is faster but halves the wall beneath. Absent means field for a new model, stamp for an older file.",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "string",
+      "enum": [
+        "field",
+        "stamp"
+      ]
+    },
+    "noDetail": {
+      "description": "Build the plain body and skip every feature.",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "boolean"
+    },
+    "notchDepth": {
+      "description": "Depth for notch-style features.",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "number"
+    },
+    "notchFaceOnly": {
+      "description": "A notch cuts from its own face only, never through.",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "boolean"
+    },
+    "sculpt": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "description": "Per-vertex offsets from hand sculpting.",
+      "x-read-by": [
+        "studio"
+      ]
+    },
+    "sculptStrokes": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "description": "The strokes that produced the sculpt, kept so it can be re-applied.",
+      "x-read-by": [
+        "studio"
+      ]
+    },
+    "section": {
+      "description": "Cross-section shape for the loft builder.",
+      "x-read-by": [
+        "studio"
+      ]
+    },
+    "sections": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "description": "Named cross-sections at positions along the length.",
+      "x-read-by": [
+        "studio"
+      ]
+    },
+    "shape": {
+      "description": "Section family for the loft builder.",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "string"
+    },
+    "frontHull": {
+      "description": "Front-end outline, when the nose is traced separately.",
+      "x-read-by": [
+        "studio"
+      ]
+    },
+    "plainFrame": {
+      "description": "Suppress decorative geometry.",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "boolean"
+    },
+    "trace": {
+      "description": "Reference images and their placement. Not geometry.",
+      "x-read-by": [
+        "studio"
+      ]
+    },
+    "widMM": {
+      "description": "Width override in mm, 0 = derive from widthProfile.",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "number"
+    },
+    "hgtMM": {
+      "description": "Height override in mm, 0 = derive from topProfile.",
+      "x-read-by": [
+        "studio"
+      ],
+      "type": "number"
+    },
+    "revShape": {
+      "description": "Revolve profile family. Revolve mode only; the exact build does not claim to build these.",
+      "x-read-by": [
+        "studio"
+      ]
+    },
+    "revSize": {
+      "description": "Revolve size in mm. Revolve mode only; the exact build does not claim to build these.",
+      "x-read-by": [
+        "studio"
+      ]
+    },
+    "revLen": {
+      "description": "Revolve length in mm. Revolve mode only; the exact build does not claim to build these.",
+      "x-read-by": [
+        "studio"
+      ]
+    },
+    "revProfile": {
+      "description": "Revolve outline. Revolve mode only; the exact build does not claim to build these.",
+      "x-read-by": [
+        "studio"
+      ]
     }
   }
 }
