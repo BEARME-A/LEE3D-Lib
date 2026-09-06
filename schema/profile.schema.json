@@ -317,6 +317,7 @@
     "modelScale": {
       "description": "The denominator of the scale the model is built at: 200 means 1:200. Optional; absent or 1 means the model IS the real size, which is how every car profile behaves.",
       "x-read-by": [
+        "studio",
         "exact"
       ],
       "type": "number",
@@ -375,6 +376,16 @@
     "realLength": {
       "description": "How long the real thing is, in mm. A 24m building is 24000. Optional, and purely a record: `length` remains the model size that all geometry is built from, so a profile without this behaves exactly as before.",
       "x-read-by": [
+        "studio",
+        "exact"
+      ],
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "revHeight": {
+      "description": "How tall a turned object is, in mm. Kept separately because `length` for a fountain is its DIAMETER, so falling back to it returns a squat model.",
+      "x-read-by": [
+        "studio",
         "exact"
       ],
       "type": "number",
@@ -391,6 +402,14 @@
       "x-read-by": [
         "studio"
       ]
+    },
+    "revProfileV": {
+      "description": "Radius against height for a turned object: [[height fraction, radius mm], …], read off the traced side elevation, where each height's radius is half the outline's width there. Only meaningful when shape is \"lathe\".",
+      "x-read-by": [
+        "studio",
+        "exact"
+      ],
+      "type": "array"
     },
     "revShape": {
       "description": "Revolve profile family. Revolve mode only; the exact build does not claim to build these.",
@@ -465,6 +484,7 @@
     "shape": {
       "description": "Section family for the loft builder.",
       "x-read-by": [
+        "exact",
         "studio"
       ],
       "type": "string"
