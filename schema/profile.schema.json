@@ -482,7 +482,7 @@
       "type": "boolean"
     },
     "shape": {
-      "description": "Section family for the loft builder.",
+      "description": "Which builder makes the body. \"lathe\" revolves the side elevation about the vertical axis — the only way to build a fountain or column, because a visual hull comes out 36% out of round anywhere the body narrows below its widest plan circle. Anything else is a section family for the loft builder.",
       "x-read-by": [
         "exact",
         "studio"
